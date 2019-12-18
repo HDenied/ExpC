@@ -1,6 +1,4 @@
-#include<stdio.h>
 #include<tst.h>
-#include<assert.h>
 
 enum _BRANCH_E{
     C_BRANCH=0,
