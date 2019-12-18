@@ -24,6 +24,7 @@ struct TST_node_s{
     struct TST_node_s * l;
     struct TST_node_s * c;
     struct TST_node_s * r;
+    struct TST_node_s * p;  // Previous node
     uint n_occ;
 
 };
@@ -50,6 +51,13 @@ bool is_leaf(const TST_NODE* node)
     return false;
 }
 
+bool is_root(const TST_TREE *tree, TST_NODE *node)
+{
+    if(!tree)
+        return false;
+    return tree->root == node;
+}
+
 bool is_end_word(const TST_NODE* node)
 {
     if(node->n_occ)
@@ -60,6 +68,27 @@ bool is_end_word(const TST_NODE* node)
 uint get_num_occ(const TST_NODE* node)
 {
     return node->n_occ;
+}
+
+/* It removes link parent-child */
+void _rm_link_parent(TST_NODE *node)
+{
+    TST_NODE *parent= node->p; 
+
+    assert(node);
+
+    if(parent)
+    {
+        if(parent->c == node)
+           parent->c=NULL;
+        else if(parent->l == node)
+           parent->l=NULL;
+        else if(parent->r == node)
+           parent->r=NULL;
+
+        node->p=NULL;
+    }
+
 }
 
 uint _attach_branch(TST_TREE **tree_ptr, TST_NODE **last_matching, const char *word, BRANCH_E branch)
@@ -73,6 +102,7 @@ uint _attach_branch(TST_TREE **tree_ptr, TST_NODE **last_matching, const char *w
         tree = calloc(1,sizeof(TST_TREE));
         *tree_ptr = tree;
         tree->root = calloc(1,sizeof(TST_NODE));
+        tree->root->p=NULL;
         last_node = tree->root;
         last_node->val=*word;
         tree->alloc_n++;
@@ -82,7 +112,7 @@ uint _attach_branch(TST_TREE **tree_ptr, TST_NODE **last_matching, const char *w
     else if (!last_node)
     {
         log_err("A node to attach the branch must be provided");
-        assert(0);
+        assert(false);
     }
 
     while(*word)
@@ -94,6 +124,7 @@ uint _attach_branch(TST_TREE **tree_ptr, TST_NODE **last_matching, const char *w
 
                 last_node->c = calloc(1,sizeof(TST_NODE));
                 last_node->c->val=*word;
+                last_node->c->p = last_node;
                 last_node=last_node->c;
                 tree->alloc_n++;
                 word++;
@@ -103,6 +134,7 @@ uint _attach_branch(TST_TREE **tree_ptr, TST_NODE **last_matching, const char *w
             {
                 last_node->r = calloc(1,sizeof(TST_NODE));
                 last_node->r->val=*word;
+                last_node->r->p = last_node;
                 last_node=last_node->r;
                 (*tree_ptr)->alloc_n++;
                 word++;
@@ -113,6 +145,7 @@ uint _attach_branch(TST_TREE **tree_ptr, TST_NODE **last_matching, const char *w
             {
                 last_node->l = calloc(1,sizeof(TST_NODE));
                 last_node->l->val=*word;
+                last_node->l->p = last_node;
                 last_node=last_node->l;
                 (*tree_ptr)->alloc_n++;
                 word++;
@@ -182,7 +215,7 @@ uint _TST_path_finder(TST_TREE **tree_ptr, TST_NODE **last_matching, const char 
 
 }
 
-bool TST_path_builder(TST_TREE **tree_ptr, TST_NODE **last_matching, const char *word)
+bool TST_path_add(TST_TREE **tree_ptr, TST_NODE **last_matching, const char *word)
 {
     uint num_match_ch = 0;
     TST_TREE *tree= *tree_ptr;
@@ -243,29 +276,77 @@ bool TST_path_builder(TST_TREE **tree_ptr, TST_NODE **last_matching, const char 
 
 }
 
-void TST_pop_word(TST_TREE **tree_ptr, TST_NODE *node, WORD_S *word, uint pos)
+void TST_path_rm(TST_TREE **tree_ptr, TST_NODE *node, WORD_S *word, uint pos)
 {
     if (node)
     {
-
-        TST_pop_word(tree_ptr, node->l, word, pos);
-
-        word->word[pos]= node->val;
-
-        if(is_end_word(node))
+        if(!word->is_finished)
         {
-            word->number=node->n_occ;
-            word->word[pos+1] = '\0'; 
-            node->n_occ=0;
+            //Condition necessary to terminate recursion
+            TST_path_rm(tree_ptr, node->l, word, pos);
         }
 
-        if(is_leaf(node))
+        if(!word->is_finished)
+        {
+            if(pos>=W_LEN)
+            {
+                log_err("Word size grater than the maximul allowed (%d chars)", W_LEN);
+                assert(false);
+            }
+
+            word->word[pos]= node->val;
+
+            if(is_end_word(node) && is_leaf(node))
+            {
+                word->number=node->n_occ;
+                word->word[pos+1] = '\0'; 
+                word->is_finished=true;
+                node->n_occ=0;
+                (*tree_ptr)->total_diff_words--;
+            }
+
+        }
+
+        if(!word->is_finished)
+        {
+            TST_path_rm(tree_ptr, node->c, word, pos+1);
+        }
+
+        if(!word->is_finished)
+        {
+            TST_path_rm(tree_ptr, node->r, word, pos);
+        }
+
+        
+        if(is_leaf(node) && !is_end_word(node))
+        {
+            _rm_link_parent(node);
             free(node);
+            (*tree_ptr)->alloc_n--;
 
+            if ((*tree_ptr)->alloc_n==0)
+            {
+                free(*tree_ptr);
+                *tree_ptr=NULL;
+            }
 
-        TST_pop_word(tree_ptr, node->c, word, pos+1);
+        }
 
-        TST_pop_word(tree_ptr, node->r, word, pos);
+        //Because the left msot and central nodes are the ones pruned
+        //when we are level 0 and they are all pruned a rotation at root level must be performed
+        if(word->is_finished &&
+           is_root(*tree_ptr,node) &&
+           !is_end_word(node) &&
+           node->r &&
+           node->c==NULL &&
+           node->l==NULL)
+        {
+            TST_NODE *new_root=node->r;
+            new_root->p=NULL;
+            (*tree_ptr)->root=new_root;
+            free(node);
+            (*tree_ptr)->alloc_n--;
+        }
 
     } 
 
