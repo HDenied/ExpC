@@ -274,6 +274,8 @@ bool TST_path_add(TST_TREE **tree_ptr, TST_NODE **last_matching, const char *wor
 
 }
 
+
+
 void TST_path_rm(TST_TREE **tree_ptr, TST_NODE *node, WORD_S *word, uint pos)
 {
     if (node)
@@ -348,6 +350,105 @@ void TST_path_rm(TST_TREE **tree_ptr, TST_NODE *node, WORD_S *word, uint pos)
 
     } 
 
+}
+
+/* It removes link parent-child */
+TST_NODE* _rm_lk_parent(TST_NODE *node)
+{
+    TST_NODE *parent= node->p; 
+
+    assert(node);
+
+    if(parent)
+    {
+        if(parent->c == node)
+           parent->c=NULL;
+        else if(parent->l == node)
+           parent->l=NULL;
+        else if(parent->r == node)
+           parent->r=NULL;
+
+        node->p=NULL;
+        return parent;
+    }
+
+    return NULL;
+
+}
+
+void _prune(TST_TREE **tree, TST_NODE *node)
+{
+    TST_NODE *p_node=NULL;
+    while(node && node->n_occ==0)
+    {
+        if(is_end_word(node))
+        {
+            break;
+        }
+        
+        if(is_leaf(node))
+        {
+            p_node = _rm_lk_parent(node);
+            free(node);
+            (*tree)->alloc_n--;
+        }
+        else
+        {
+            p_node=node->p;
+        }
+        
+        node=p_node;
+
+    }
+
+    (*tree)->total_diff_words--;
+
+    if((*tree)->total_diff_words==0 && (*tree)->alloc_n==0)
+    {
+        free(*tree);
+        *tree=NULL;
+    }
+    else if((*tree)->total_diff_words==0 && (*tree)->alloc_n!=0)
+    {
+        log_err("Removing a non empty tree");
+        assert(false);
+    }
+    
+
+}
+
+void TST_path_rmv(TST_TREE **tree_ptr, WORD_S *word_s)
+{
+    TST_NODE *node = (*tree_ptr)->root;
+    uint num_w=0;
+    while(true)
+    {
+        if(!is_leaf(node))
+        {
+            if (node->l)
+                node=node->l;
+            else if (node->r)
+                node=node->r;
+            else
+            {
+                word_s->word[num_w]=node->val; 
+                node=node->c;
+                num_w++;
+            }
+        }
+        else
+        {
+            word_s->word[num_w]=node->val; 
+            num_w++;
+            word_s->word[num_w]='\0';
+            word_s->number = node->n_occ;
+            node->n_occ=0;
+            _prune(tree_ptr, node);
+            break;
+        }
+
+
+    }
 }
 
 

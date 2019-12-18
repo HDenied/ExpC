@@ -27,6 +27,9 @@ bool TST_path_add(TST_TREE **tree_ptr, TST_NODE **last_matching, const char *wor
 /* This function will pop a word stored in the tree*/
 void TST_path_rm(TST_TREE **tree_ptr, TST_NODE *node, WORD_S *word, uint pos);
 
+void TST_path_rmv(TST_TREE **tree_ptr, WORD_S *word_s);
+
+
 
 
 #endif

@@ -1,13 +1,6 @@
 #include<tst.h>
 
 
-uint _get_word_len(const char *word)
-{
-    uint len = 0;
-    while(*(word+len))
-        len++;
-    return len;
-}
 
 bool _check_word_is_present(char *w_array[], char *word, uint word_num)
 {
@@ -32,7 +25,7 @@ void _test_rm(TST_TREE *tree, char *w_array[])
     {
         //Initialise the struct to 0
         memset(&word_s,0,sizeof(WORD_S));
-        TST_path_rm(&tree, get_root(tree), &word_s, 0);
+        TST_path_rmv(&tree,&word_s);
         assert(_check_word_is_present(w_array, word_s.word, n_words));
     }
     assert(tree==NULL);

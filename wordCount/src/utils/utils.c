@@ -1,41 +1,62 @@
 #include<utils.h>
 
 
+uint UTILS_get_word_len(const char *word)
+{
+    uint len = 0;
+    while(*(word+len))
+        len++;
+    return len;
+}
+
+
 bool UTILS_tokenize(FILE *fp, char *word, char delimiter, char skip_delimiters[], uint skip_counts)
 {
     uint ch = 0;
     uint skip_idx=0;
     uint word_idx=0;
     uint idx=0;
-    bool skip = false;    while(!feof(fp))
+    bool skip = false;    
+    
+    while(!feof(fp))
     {
         skip = false;
-        ch = fgetc(fp);        if(ch==feof(fp))
+        ch = fgetc(fp);
+
+        if(ch==feof(fp))
         {
             return false;
-        }        /*check if to break or skip special characters*/
-        for(idx=0; idx<skip_counts;idx++)
+        }        
+        /*check if to break or skip special characters*/
+        if(ch != delimiter)
         {
-            if(ch == skip_delimiters[idx])
+            for(idx=0; idx<skip_counts;idx++)
             {
-                if(word[0]=='\0')
+                if(ch == skip_delimiters[idx])
                 {
-                     skip_idx++;
-                     skip = true;
-                     break;
+                    if(word[0]=='\0')
+                    {
+                         skip_idx++;
+                         skip = true;
+                         break;
+                    }
+                    else
+                    {
+                        word[word_idx]='\0';
+                        return true;
+                    }            
                 }
-                else
-                {
-                    word[word_idx]='\0';
-                    return true;
-                }            }
-        }        if (!skip)
+            }
+        }
+
+        if (!skip)
         {
             if (ch!= delimiter)
             {
                 word[word_idx]=ch;
                 word_idx++;
-                skip_idx++;            }
+                skip_idx++;            
+            }
             else if (ch == delimiter && word[0]=='\0')
             {
                 skip_idx++;
@@ -46,7 +67,9 @@ bool UTILS_tokenize(FILE *fp, char *word, char delimiter, char skip_delimiters[]
                 return true;
             }
         }
-    }    return false;
+    }    
+    
+    return false;
 }
 
 
