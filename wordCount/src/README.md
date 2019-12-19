@@ -5,7 +5,7 @@ gcc -g -o sorter  ./utils/utils.c ./tst_tree/tst.c ./main.c -I. -Itst_tree -Iuti
 
 ## Build & run tree tests
 cd tst_tree
-gcc -g -o unit_test unit_test.c tst.c -I. -I../
+gcc -g -o unit_test unit_test.c tst.c ../utils/utils.c -I. -I../ -I../utils/
 ./unit_test
 
 ## Build & run utils tests

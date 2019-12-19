@@ -29,7 +29,7 @@ void TST_path_rm(TST_TREE **tree_ptr, TST_NODE *node, WORD_S *word, uint pos);
 
 void TST_path_rmv(TST_TREE **tree_ptr, WORD_S *word_s);
 
-
+void TST_insert_w(TST_TREE **tree_ptr, char *word);
 
 
 #endif

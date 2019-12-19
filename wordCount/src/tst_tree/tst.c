@@ -1,4 +1,5 @@
 #include<tst.h>
+#include<utils.h>
 
 enum _BRANCH_E{
     C_BRANCH=0,
@@ -68,7 +69,12 @@ uint get_num_occ(const TST_NODE* node)
     return node->n_occ;
 }
 
-/* It removes link parent-child */
+TST_NODE *get_root(TST_TREE *tree)
+{
+    return tree->root;
+}
+
+/******************************OLD_FUN*****************************************************************/
 void _rm_link_parent(TST_NODE *node)
 {
     TST_NODE *parent= node->p; 
@@ -273,8 +279,212 @@ bool TST_path_add(TST_TREE **tree_ptr, TST_NODE **last_matching, const char *wor
     }
 
 }
+/****************************************************************************************************/
 
+TST_NODE* _rm_lk_parent(TST_NODE *node)
+{
+    TST_NODE *parent= node->p; 
 
+    assert(node);
+
+    if(parent)
+    {
+        if(parent->c == node)
+           parent->c=NULL;
+        else if(parent->l == node)
+           parent->l=NULL;
+        else if(parent->r == node)
+           parent->r=NULL;
+
+        node->p=NULL;
+        return parent;
+    }
+
+    return NULL;
+
+}
+
+void _prune(TST_TREE **tree, TST_NODE *node)
+{
+    TST_NODE *p_node=NULL;
+    while(node && node->n_occ==0)
+    {
+        if(is_end_word(node))
+        {
+            break;
+        }
+        
+        if(is_leaf(node))
+        {
+            p_node = _rm_lk_parent(node);
+            free(node);
+            (*tree)->alloc_n--;
+        }
+         /* root rotation as the central word has been removed */
+        else if (is_root(*tree,node) &&
+                 node->c==NULL)
+        {
+            if(node->l)
+            {
+                TST_NODE *l_root=node->l;
+                TST_NODE *r_node=node->r;
+                log_err("Node on the left side of the root should have been already pruned");
+                assert(false);
+                l_root->r=r_node;
+                l_root->p=NULL;
+                free((*tree)->root);
+                (*tree)->root=l_root;
+                (*tree)->alloc_n--;
+            }
+            else
+            {
+                TST_NODE *r_root=node->r;
+                r_root->p=NULL;
+                free((*tree)->root);
+                (*tree)->root=r_root;
+                (*tree)->alloc_n--;
+            }
+            break;
+            
+        }
+        else
+        {
+            p_node=node->p;
+        }
+        
+        node=p_node;
+
+    }
+
+    (*tree)->total_diff_words--;
+
+    if((*tree)->total_diff_words==0 && (*tree)->alloc_n==0)
+    {
+        free(*tree);
+        *tree=NULL;
+    }
+    else if((*tree)->total_diff_words==0 && (*tree)->alloc_n!=0)
+    {
+        log_err("Removing a non empty tree");
+        assert(false);
+    }
+    
+
+}
+
+TST_NODE *_TST_gen_branch(TST_TREE *tree, char *word)
+{
+    TST_NODE *branch=NULL;
+    TST_NODE *head_node=NULL;
+
+    while(*word)
+    {
+        if(branch)
+        {
+            branch->c=calloc(1,sizeof(TST_NODE));
+            branch->c->val=*word;
+            branch->c->p=branch;
+            branch=branch->c;
+        }
+        else
+        {
+            branch=calloc(1,sizeof(TST_NODE));
+            branch->val=*word;
+            branch->p=NULL;
+            head_node=branch;
+        }
+
+        word++;
+        tree->alloc_n++;
+        
+    }
+
+    return head_node;
+}
+
+void TST_insert_w(TST_TREE **tree_ptr, char *word)
+{
+    uint num_match_ch = 0;
+    TST_NODE *node = NULL;
+    TST_NODE *p_node = NULL;
+    char num_matching_ch= 0;
+    uint w_len = UTILS_get_word_len(word);
+
+    if(*tree_ptr==NULL)
+    {
+        *tree_ptr=calloc(1,sizeof(TST_TREE));
+        memset(*tree_ptr,0,sizeof(TST_TREE));
+    }
+
+    /*Word actually exists*/
+    if(w_len)
+    {
+        while(node)
+        {
+            p_node=node;
+            if (node->val == *(word+num_match_ch))
+            {
+                node = node->c;
+                num_match_ch++;
+            }
+            else if(node->val > *(word+num_match_ch))
+                node= node->l;
+            else if (node->val < *(word+num_match_ch))
+                node=node->r;
+        }
+
+        /*word exists and it is contained in the dictionary already*/
+        if(w_len==num_match_ch)
+            node->n_occ++;
+        /*Word is new than it needs to be added*/
+        else if(p_node && node==NULL)
+        {
+            /*Full word in the tree is a prefix of actual word */
+            if(is_leaf(p_node))
+            {
+                node =_TST_gen_branch(*tree_ptr, word+num_match_ch);
+                p_node->c=node;
+                node->p=p_node;
+            }
+            /*Partial word in the tree is a prefix of actual word */
+            else
+            {
+                if(p_node->val > *(word+num_match_ch))
+                {
+                    node =_TST_gen_branch(*tree_ptr, word+num_match_ch);
+                    p_node->l=node;
+
+                }
+                else if(p_node->val < *(word+num_match_ch))
+                {
+                    node =_TST_gen_branch(*tree_ptr, word+num_match_ch);
+                    p_node->r=node;
+
+                }
+                else if(p_node->val == *(word+num_match_ch))
+                {
+                    log_err("Trying to overwrite the tree dictionary with word %s",word);
+                    assert(false);
+                }
+
+                node->p=p_node;
+            }
+        }
+        /* First word in the tree */
+        else if(p_node==NULL && node==NULL)
+        {
+            node =_TST_gen_branch(*tree_ptr, word);
+            (*tree_ptr)->root=node;
+            (*tree_ptr)->total_diff_words++;
+
+        }
+        else
+        {
+            log_err("Unexpected path.");
+            assert(false);
+        }
+    }
+}
 
 void TST_path_rm(TST_TREE **tree_ptr, TST_NODE *node, WORD_S *word, uint pos)
 {
@@ -352,71 +562,6 @@ void TST_path_rm(TST_TREE **tree_ptr, TST_NODE *node, WORD_S *word, uint pos)
 
 }
 
-/* It removes link parent-child */
-TST_NODE* _rm_lk_parent(TST_NODE *node)
-{
-    TST_NODE *parent= node->p; 
-
-    assert(node);
-
-    if(parent)
-    {
-        if(parent->c == node)
-           parent->c=NULL;
-        else if(parent->l == node)
-           parent->l=NULL;
-        else if(parent->r == node)
-           parent->r=NULL;
-
-        node->p=NULL;
-        return parent;
-    }
-
-    return NULL;
-
-}
-
-void _prune(TST_TREE **tree, TST_NODE *node)
-{
-    TST_NODE *p_node=NULL;
-    while(node && node->n_occ==0)
-    {
-        if(is_end_word(node))
-        {
-            break;
-        }
-        
-        if(is_leaf(node))
-        {
-            p_node = _rm_lk_parent(node);
-            free(node);
-            (*tree)->alloc_n--;
-        }
-        else
-        {
-            p_node=node->p;
-        }
-        
-        node=p_node;
-
-    }
-
-    (*tree)->total_diff_words--;
-
-    if((*tree)->total_diff_words==0 && (*tree)->alloc_n==0)
-    {
-        free(*tree);
-        *tree=NULL;
-    }
-    else if((*tree)->total_diff_words==0 && (*tree)->alloc_n!=0)
-    {
-        log_err("Removing a non empty tree");
-        assert(false);
-    }
-    
-
-}
-
 void TST_path_rmv(TST_TREE **tree_ptr, WORD_S *word_s)
 {
     TST_NODE *node = (*tree_ptr)->root;
@@ -427,14 +572,15 @@ void TST_path_rmv(TST_TREE **tree_ptr, WORD_S *word_s)
         {
             if (node->l)
                 node=node->l;
-            else if (node->r)
-                node=node->r;
-            else
+            else if (node->c)            
             {
                 word_s->word[num_w]=node->val; 
                 node=node->c;
                 num_w++;
             }
+            else if (node->r)
+                node=node->r;
+            
         }
         else
         {
@@ -452,7 +598,3 @@ void TST_path_rmv(TST_TREE **tree_ptr, WORD_S *word_s)
 }
 
 
-TST_NODE * get_root(TST_TREE *tree)
-{
-    return tree->root;
-}

@@ -43,7 +43,7 @@ void test_root_gen()
     memset(&element, 0, sizeof(WORD_S));
 
 
-    assert(TST_path_add(&tree,&node, word[0]));
+    TST_insert_w(&tree,word[0]);
 
     assert(get_total_words(tree) == n_diff_words);
     assert(get_alloc_num(tree) == ref_alloc);
