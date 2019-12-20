@@ -21,14 +21,10 @@ uint get_alloc_num(const TST_TREE*tree);
 
 TST_NODE * get_root(TST_TREE *tree);
 
+/* This function will fetch a word stored in the tree*/
+void TST_pick_w(TST_TREE **tree_ptr, WORD_S *word_s);
+
 /* This function will build the TST tree */
-bool TST_path_add(TST_TREE **tree_ptr, TST_NODE **last_matching, const char *word);
-
-/* This function will pop a word stored in the tree*/
-void TST_path_rm(TST_TREE **tree_ptr, TST_NODE *node, WORD_S *word, uint pos);
-
-void TST_path_rmv(TST_TREE **tree_ptr, WORD_S *word_s);
-
 void TST_insert_w(TST_TREE **tree_ptr, char *word);
 
 

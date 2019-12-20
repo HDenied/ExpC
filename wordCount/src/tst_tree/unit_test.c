@@ -25,7 +25,7 @@ void _test_rm(TST_TREE *tree, char *w_array[])
     {
         //Initialise the struct to 0
         memset(&word_s,0,sizeof(WORD_S));
-        TST_path_rmv(&tree,&word_s);
+        TST_pick_w(&tree,&word_s);
         assert(_check_word_is_present(w_array, word_s.word, n_words));
     }
     assert(tree==NULL);
@@ -63,8 +63,8 @@ void test_equal_insertion()
     uint n_diff_words = 1;
     uint ref_alloc = 4;
 
-    assert(TST_path_add(&tree,&node, word[0]));
-    assert(TST_path_add(&tree,&last_matching, word[0]));
+    TST_insert_w(&tree,word[0]);
+    TST_insert_w(&tree, word[0]);
 
     assert(get_total_words(tree) == 1);
     assert(get_alloc_num(tree) == ref_alloc);
@@ -89,12 +89,10 @@ void test_longer_matching_insertion()
 
     for (count=0; count<4; count++)
     {
-        assert(TST_path_add(&tree,&node, word[count]));
+        TST_insert_w(&tree,word[count]);
 
         assert(get_total_words(tree) == n_diff_words[count]);
         assert(get_alloc_num(tree) == ref_alloc[count]);
-        assert(get_num_occ(node)==1);
-        assert(is_end_word(node));
         node==NULL;
     }
 
@@ -118,12 +116,11 @@ void test_shorter_matching_insertion()
 
     for (count=0; count<4; count++)
     {
-        assert(TST_path_add(&tree,&node, word[count]));
 
-        assert(get_num_occ(node) == ref_occ);
+        TST_insert_w(&tree,word[count]);
+
         assert(get_total_words(tree) == n_diff_words[count]);
         assert(get_alloc_num(tree) == ref_alloc);
-        assert(is_end_word(node));
 
         node = NULL;
     }
@@ -146,17 +143,16 @@ void test_multiple_insertion_in_the_middle_of_longer_word()
     uint ref_alloc = 4;
     uint count=0;
 
-    TST_path_add(&tree,&node, "ciao");
+    TST_insert_w(&tree,"ciao");
+
     node=NULL;
 
     for (count=0; count<2; count++)
     {
-        assert(TST_path_add(&tree,&node, word[count]));
+        TST_insert_w(&tree,word[count]);
 
-        assert(get_num_occ(node) == ref_occ[count]);
         assert(get_total_words(tree) == n_diff_words);
         assert(get_alloc_num(tree) == ref_alloc);
-        assert(is_end_word(node));
 
         node = NULL;
     }
@@ -171,20 +167,16 @@ void test_diff_words_beginning()
 {
 
     TST_TREE *tree=NULL;
-    TST_NODE *node=NULL;
     TST_NODE *last_matching=NULL;
     char *word[] = {"ciao", "pane"};
     uint ref_words=2;
     uint ref_alloc = 8;
 
 
-    assert(TST_path_add(&tree,&node, word[0]));
-    assert(is_end_word(node));
-    node=NULL;
-    assert(TST_path_add(&tree,&node, word[1]));
+    TST_insert_w(&tree,word[0]);
+    TST_insert_w(&tree,word[1]);
     assert(get_total_words(tree) == ref_words);
     assert(get_alloc_num(tree) == ref_alloc);
-    assert(is_end_word(node));
     _test_rm(tree, word);
 
     log_info("PASSED - test_diff_words_beginning");
@@ -195,20 +187,16 @@ void test_diff_words_middle()
 {
 
     TST_TREE *tree=NULL;
-    TST_NODE *node=NULL;
     TST_NODE *last_matching=NULL;
     char *word[] = {"ciaone", "ciabatta"};
     uint ref_words=2;
     uint ref_alloc = 11;
 
 
-    assert(TST_path_add(&tree,&node, word[0]));
-    assert(is_end_word(node));
-    node=NULL;
-    assert(TST_path_add(&tree,&node, word[1]));
+    TST_insert_w(&tree,word[0]);
+    TST_insert_w(&tree,word[1]);
     assert(get_total_words(tree) == ref_words);
     assert(get_alloc_num(tree) == ref_alloc);
-    assert(is_end_word(node));
 
     _test_rm(tree, word);
     log_info("PASSED - test_diff_words_middle");
@@ -219,20 +207,15 @@ void test_diff_words_end()
 {
 
     TST_TREE *tree=NULL;
-    TST_NODE *node=NULL;
     TST_NODE *last_matching=NULL;
     char *word[] = {"ciaone", "ciaons"};
     uint ref_words=2;
     uint ref_alloc = 7;
 
-
-    assert(TST_path_add(&tree,&node, word[0]));
-    assert(is_end_word(node));
-    node=NULL;
-    assert(TST_path_add(&tree,&node, word[1]));
+    TST_insert_w(&tree,word[0]);
+    TST_insert_w(&tree,word[1]);
     assert(get_total_words(tree) == ref_words);
     assert(get_alloc_num(tree) == ref_alloc);
-    assert(is_end_word(node));
     
     _test_rm(tree, word);
     log_info("PASSED - test_diff_words_end");
@@ -243,21 +226,17 @@ void test_multiple_insertion()
 {
 
     TST_TREE *tree=NULL;
-    TST_NODE *node=NULL;
     TST_NODE *last_matching=NULL;
     char *word[] = {"ciaone", "pane", "pandoro"};
     uint ref_words=3;
     uint ref_alloc = 14;
 
-
-    assert(TST_path_add(&tree,&node, word[0]));
-    node=NULL;
-    assert(TST_path_add(&tree,&node, word[1]));
-    node=NULL;
-    assert(TST_path_add(&tree,&node, word[2]));
+    TST_insert_w(&tree,word[0]);
+    TST_insert_w(&tree,word[1]);
+    TST_insert_w(&tree,word[2]);
     assert(get_total_words(tree) == ref_words);
     assert(get_alloc_num(tree) == ref_alloc);
-    assert(is_end_word(node));
+
     
     _test_rm(tree, word);
     log_info("PASSED - test_multiple_insertion");
@@ -270,18 +249,20 @@ void test_single_multiple_insertion()
     TST_NODE *node=NULL;
     TST_NODE *last_matching=NULL;
     char *word[] = {"i","a","e","o","u"};
-    uint ref_words[] = {1,2,3,4,5};
+    uint n_diff_words[] = {1,2,3,4,5};
     uint ref_alloc[] = {1,2,3,4,5};
     uint count = 0;
 
-    for(count=0;count<5;count++)
+
+    for (count=0; count<5; count++)
     {
-        assert(TST_path_add(&tree,&node, word[count]));
-        assert(get_total_words(tree) == ref_words[count]);
+        TST_insert_w(&tree,word[count]);
+
+        assert(get_total_words(tree) == n_diff_words[count]);
         assert(get_alloc_num(tree) == ref_alloc[count]);
-        assert(is_end_word(node));
-        node=NULL;
+        node==NULL;
     }
+
 
     _test_rm(tree, word);
     log_info("PASSED - test_single_multiple_insertion");
@@ -290,20 +271,17 @@ void test_single_multiple_insertion()
 void test_single_multiple_insertion_level_0()
 {
     TST_TREE *tree=NULL;
-    TST_NODE *node=NULL;
-    TST_NODE *last_matching=NULL;
     char *word[] = {"c","b","d","a","p"};
-    uint ref_words[] = {1,2,3,4,5};
+    uint n_diff_words[] = {1,2,3,4,5};
     uint ref_alloc[] = {1,2,3,4,5};
     uint count = 0;
 
-    for(count=0;count<5;count++)
+    for (count=0; count<5; count++)
     {
-        assert(TST_path_add(&tree,&node, word[count]));
-        assert(get_total_words(tree) == ref_words[count]);
+        TST_insert_w(&tree,word[count]);
+
+        assert(get_total_words(tree) == n_diff_words[count]);
         assert(get_alloc_num(tree) == ref_alloc[count]);
-        assert(is_end_word(node));
-        node=NULL;
     }
 
     _test_rm(tree, word);
@@ -313,47 +291,41 @@ void test_single_multiple_insertion_level_0()
 void test_multiple_words_one_side()
 {
     TST_TREE *tree=NULL;
-    TST_NODE *node=NULL;
-    TST_NODE *last_matching=NULL;
     char *word[] = {"bici","birra","broccoli", "bisaccia", "broccoli"};
-    uint ref_words[] = {1,2,3,4,4};
+    uint n_diff_words[] = {1,2,3,4,4};
     uint ref_alloc[] = {4,7,14,20,20};
     uint count = 0;
 
-    for(count=0;count<5;count++)
+    for (count=0; count<5; count++)
     {
-        assert(TST_path_add(&tree,&node, word[count]));
-        assert(get_total_words(tree) == ref_words[count]);
+        TST_insert_w(&tree,word[count]);
+
+        assert(get_total_words(tree) == n_diff_words[count]);
         assert(get_alloc_num(tree) == ref_alloc[count]);
-        assert(is_end_word(node));
-        node=NULL;
     }
 
     _test_rm(tree, word);
     log_info("PASSED - test_multiple_words_one_side");
 }
 
-void test_3_long_words_at_top()
+void test_tree_rotation()
 {
     TST_TREE *tree=NULL;
-    TST_NODE *node=NULL;
-    TST_NODE *last_matching=NULL;
     char *word[] = {"bari","asti","como"};
-    uint ref_words[] = {1,2,3};
+    uint n_diff_words[] = {1,2,3};
     uint ref_alloc[] = {4,8,12};
     uint count = 0;
 
-    for(count=0;count<3;count++)
+    for (count=0; count<3; count++)
     {
-        assert(TST_path_add(&tree,&node, word[count]));
-        assert(get_total_words(tree) == ref_words[count]);
+        TST_insert_w(&tree,word[count]);
+
+        assert(get_total_words(tree) == n_diff_words[count]);
         assert(get_alloc_num(tree) == ref_alloc[count]);
-        assert(is_end_word(node));
-        node=NULL;
     }
 
     _test_rm(tree, word);
-    log_info("PASSED - test_3_long_words_at_top");
+    log_info("PASSED - test_tree_rotation");
 
 
 }
@@ -374,7 +346,7 @@ int main(int argc, void *argv[])
     test_single_multiple_insertion();
     test_single_multiple_insertion_level_0();
     test_multiple_words_one_side();
-    test_3_long_words_at_top();
+    test_tree_rotation();
 
     return 0;
 }
