@@ -9,21 +9,35 @@
 
 
 
-#define log_info(M, ...) fprintf(stdout, "[INF] %s:%d: " M "\n",\
-        __FILE__, __LINE__, ##__VA_ARGS__)
+#define log_info(M, ...) while(true){ \
+    fprintf(stdout, "[INF] %s:%d: " M "\n",\
+        __FILE__, __LINE__, ##__VA_ARGS__); \
+    break; \
+}
 
-#define log_err(M, ...) fprintf(stdout, "[ERR] %s:%d: " M "\n",\
-        __FILE__, __LINE__, ##__VA_ARGS__)
+#define log_err(M, ...) while(true){ \
+    fprintf(stdout, "[ERR] %s:%d: " M "\n",\
+        __FILE__, __LINE__, ##__VA_ARGS__);\
+    break; \
+}
+
+#ifdef DEBUG 
+
+    #define log_dbg(M, ...) fprintf(stdout, "[DBG] %s:%d: " M "\n",\
+            __FILE__, __LINE__, ##__VA_ARGS__);
+#else
+    #define log_dbg(M, ...)
+#endif
+
 
 
 #define uint unsigned int
-#define W_LEN 512
+#define W_LEN 256
 
 
 struct word_s {
     char word[W_LEN];
     uint number;
-    bool is_finished;
 };
 
 typedef struct word_s WORD_S;

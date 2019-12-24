@@ -3,29 +3,24 @@
 void test_reading_bin_file()
 {
     FILE *fp;
-    char skip_delimiters[] = {'\n','\t'};
+    char skip_delimiters[] = {',', '\n', '.', ';', '\t', '*', '!', '[', ']', '(',')','{', '}','@','#','\\','/','\"','\'','\?','-'};
     char f_path[]="./test_read.txt";
     char word[W_LEN]="\0";    
-    char *ref_words[]={"test", "marco", "val", "aa"};    
+    uint count=0;
+    char *ref_words[]=  {"mercenario","carlo","alberto","ciro","cialtrone","ci","carletto","ma",
+    "marcellino","marcelletto","marcella","mercenarietto","mercenarietta","ma","ma","ma",
+    "minorca","ma","pesaro","posto","progetto","post","pro","progettino","progettino",
+    "mitomane","micio","miur","trattore","mercenari","mercenar","maniglia","0","1"};
     fp = fopen(f_path, "rb");
 
-    UTILS_tokenize(fp,word,' ', skip_delimiters, sizeof(skip_delimiters)/sizeof(char));
-    assert(!strcmp(word,ref_words[0]));
-    word[0]='\0';
-
-    UTILS_tokenize(fp,word,' ', skip_delimiters, sizeof(skip_delimiters)/sizeof(char));
-    assert(!strcmp(word,ref_words[1]));
-    word[0]='\0';
-
-    UTILS_tokenize(fp,word,' ', skip_delimiters, sizeof(skip_delimiters)/sizeof(char));
-    assert(!strcmp(word,ref_words[2]));
-    word[0]='\0';
-
-    UTILS_tokenize(fp,word,' ', skip_delimiters, sizeof(skip_delimiters)/sizeof(char));
-    assert(!strcmp(word,ref_words[3]));
-    word[0]='\0';
-    
-    assert(!UTILS_tokenize(fp,word,' ', skip_delimiters, sizeof(skip_delimiters)/sizeof(char)));
+    while(UTILS_tokenize(fp,word,' ', skip_delimiters, sizeof(skip_delimiters)/sizeof(char)))
+    {
+        assert(!strcmp(word,ref_words[count]));
+        printf("%-10s len: %u\n", word, UTILS_get_word_len(word));
+        word[0]='\0';
+        count++;
+    }
+  
     fclose(fp);
 
     log_info("PASSED - test_reading_bin_file");

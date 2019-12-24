@@ -18,6 +18,7 @@ bool is_end_word(const TST_NODE* node);
 uint get_num_occ(const TST_NODE* node);
 uint get_total_words(const TST_TREE*tree);
 uint get_alloc_num(const TST_TREE*tree);
+uint get_size_longest_word(const TST_TREE*tree);
 
 TST_NODE * get_root(TST_TREE *tree);
 

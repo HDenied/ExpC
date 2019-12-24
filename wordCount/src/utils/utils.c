@@ -10,68 +10,38 @@ uint UTILS_get_word_len(const char *word)
 }
 
 
-bool UTILS_tokenize(FILE *fp, char *word, char delimiter, char skip_delimiters[], uint skip_counts)
+bool UTILS_tokenize(FILE *fp, char *word)
 {
-    uint ch = 0;
-    uint skip_idx=0;
-    uint word_idx=0;
-    uint idx=0;
-    bool skip = false;    
-    
-    while(!feof(fp))
-    {
-        skip = false;
-        ch = fgetc(fp);
+      uint ch = 0;
+      uint word_idx=0;
+      uint idx=0;
+      
+      while(!feof(fp))
+      {
+          ch = fgetc(fp);
 
-        if(ch==feof(fp))
-        {
-            return false;
-        }        
-        /*check if to break or skip special characters*/
-        if(ch != delimiter)
-        {
-            for(idx=0; idx<skip_counts;idx++)
-            {
-                if(ch == skip_delimiters[idx])
-                {
-                    if(word[0]=='\0')
-                    {
-                         skip_idx++;
-                         skip = true;
-                         break;
-                    }
-                    else
-                    {
-                        word[word_idx]='\0';
-                        return true;
-                    }            
-                }
-            }
-        }
+          if(ch >= 'a' && ch <= 'z')
+          {
+              word[word_idx]=ch;
+              word_idx++;
+          }
+          else if (ch >= 'A' && ch <= 'Z')
+          {
+              ch+=32;
+              word[word_idx]=ch;
+              word_idx++;
+          }
+          else if (word[0]!='\0')
+          {
+              word[word_idx]='\0';
+              return true;
+          }
 
-        if (!skip)
-        {
-            if (ch!= delimiter)
-            {
-                word[word_idx]=ch;
-                word_idx++;
-                skip_idx++;            
-            }
-            else if (ch == delimiter && word[0]=='\0')
-            {
-                skip_idx++;
-            }
-            else
-            {
-                word[word_idx]='\0';
-                return true;
-            }
-        }
-    }    
-    
-    return false;
+      }
+
+      return false;
+
 }
-
 
 void UTILS_insertionSort(WORD_S *w_array, uint a_size)
 {

@@ -13,8 +13,8 @@ struct TST_tree{
 
     TST_NODE *root;
     uint total_diff_words;    
+    uint longest_word;
     uint alloc_n;
-
 
 };
 
@@ -36,6 +36,11 @@ uint get_total_words(const TST_TREE*tree)
 uint get_alloc_num(const TST_TREE*tree)
 {
     return tree->alloc_n;
+}
+
+uint get_size_longest_word(const TST_TREE*tree)
+{
+    return tree->longest_word;
 }
 
 
@@ -213,6 +218,11 @@ void TST_insert_w(TST_TREE **tree_ptr, char *word)
     }
 
     node = (*tree_ptr)->root;
+
+    if ((*tree_ptr)->longest_word < w_len)
+        (*tree_ptr)->longest_word=w_len;
+
+    
 
     /*Word actually exists*/
     if(w_len)

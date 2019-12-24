@@ -2,9 +2,6 @@
 #include<utils.h>
 #include<tst.h>
 
-#define BREAK_NUM 10204
-
-
 int main()
 {
 
@@ -12,52 +9,46 @@ int main()
     TST_TREE *tree=NULL;
     TST_NODE *node=NULL;
     WORD_S word_s;
-    char skip_delimiters[] = {',', '\n', '.', ';', '\t', '*', '!', '[', ']', '(',')','@','#','"','-'};
     char f_path[]="../mobydick.txt";
     char word[W_LEN]="\0";    
     fp = fopen(f_path, "rb");
-    bool b_not_end=true;
-    uint count=0;
-    WORD_S word_arr[BREAK_NUM];
-
-    memset(word_arr, 0, BREAK_NUM*sizeof(WORD_S));
+    WORD_S *word_arr=NULL;
+    uint w_len=0;
+    uint w_idx=0;
+    uint longest_w_size=0;
 
     /* Populating the tree */
-    while(b_not_end)
+    while(UTILS_tokenize(fp, word))
     {
-        b_not_end=UTILS_tokenize(fp, word,' ', skip_delimiters, sizeof(skip_delimiters)/sizeof(char));
-        TST_path_add(&tree,&node, word);
+        TST_insert_w(&tree,word);
         word[0]='\0';
     }
 
+    longest_w_size=get_size_longest_word(tree);
+    log_dbg("Total different words: %u, total allocations: %u, longest word size: %u", get_total_words(tree), get_alloc_num(tree), longest_w_size);
+
     fclose(fp);
+
+    word_arr=calloc(get_total_words(tree),sizeof(WORD_S));
 
 
     /* Extracting the words */
-    while(true)
-    {
+    while(tree)
+    {        
         memset(&word_s,0,sizeof(WORD_S));
-        TST_path_rmv(&tree,&word_s);
+        TST_pick_w(&tree,&word_s);
 
-        if((strcmp(word_s.word,"T")))
-        {
-            uint w_len = UTILS_get_word_len(word_s.word);
-            word_arr[count].number=word_s.number;
-            memcpy(word_arr[count].word,word_s.word, w_len);
-            word_arr[count].word[w_len+1]='\0';
-            UTILS_insertionSort(word_arr, count);
+        w_len = UTILS_get_word_len(word_s.word);
+        word_arr[w_idx].number=word_s.number;
+        memcpy(word_arr[w_idx].word,word_s.word, w_len);
+        word_arr[w_idx].word[w_len+1]='\0';
+        UTILS_insertionSort(word_arr, w_idx);
+        w_idx++;
 
-        }
-        else
-        {
-            break;
-        }
-        
-        count++;
     }
 
-    for(count=0; count<20; count++)
-        printf("Word:%s, num:%d\n",word_arr[count].word, word_arr[count].number);
+    for(w_idx=0; w_idx<20; w_idx++)
+        printf("%+10u %s\n",  word_arr[w_idx].number, word_arr[w_idx].word);
 
 
 
