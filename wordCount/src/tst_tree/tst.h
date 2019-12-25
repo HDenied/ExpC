@@ -1,7 +1,7 @@
 #ifndef TST_H
 #define TST_H
 
-#include<common.h>
+#include<utils.h>
 
 struct TST_tree;
 typedef struct TST_tree TST_TREE;

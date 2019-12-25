@@ -9,6 +9,61 @@ uint UTILS_get_word_len(const char *word)
     return len;
 }
 
+void UTILS_init_w(DATA *data, const char *word, uint n_occ)
+{
+    uint w_len = UTILS_get_word_len(word);
+    data->word=calloc(w_len+1,sizeof(char));
+    memcpy(data->word, word, w_len);
+    data->word[w_len]='\0';
+    data->n_occ=n_occ;
+}
+void UTILS_deallocate_w(DATA *data)
+{
+    if (data->word)
+    {
+        free(data->word);
+        data->word=NULL;
+        data->n_occ=0;
+    }
+}
+void UTILS_swap_w(DATA *d1, DATA *d2)
+{
+    char *tmp_word=NULL;
+    uint tmp_occ= 0;
+
+    if (d1 && d2)
+    {
+        tmp_word=d1->word;
+        tmp_occ=d1->n_occ;
+        d1->word=d2->word;
+        d1->n_occ=d2->n_occ;
+        d2->word=tmp_word;
+        d2->n_occ=tmp_occ;
+    }
+    else
+    {
+        log_err("Can't swap not existent data");
+        assert(false);
+    }
+    
+}
+
+void UTILS_move_w(DATA *src, DATA *dst)
+{
+    if(src && dst)
+    {
+        dst->word=src->word;
+        dst->n_occ=src->n_occ;
+        src->word=NULL;
+        src->n_occ=0;
+    }
+    else
+    {
+        log_err("Can't move not existent data");
+        assert(false);
+    }
+    
+}
 
 bool UTILS_tokenize(FILE *fp, char *word)
 {
