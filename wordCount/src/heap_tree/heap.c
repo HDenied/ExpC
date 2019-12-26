@@ -1,26 +1,285 @@
 #include<utils.h>
+#include<heap.h>
 
 
 struct HEAP_level_s
 {
-
+    uint start_idx;
+    uint free_index;
+    uint level_num;
+    DATA *block;
+    struct HEAP_level_s *n_blk;
+    struct HEAP_level_s *p_blk;
 };
 
 typedef struct HEAP_level_s HEAP_LVL;
 
-
-
 struct HEAP_tree_s
 {
-
+    uint num_words;
+    HEAP_LVL *root;
+    HEAP_LVL *end_level;
 };
 
 typedef struct HEAP_tree_s HEAP_TREE;
 
+uint HEAP_get_num_w(HEAP_TREE *tree)
+{
+    if(tree)
+        return tree->num_words;
+
+    log_err("tree not initialized");
+    assert(false);
+}
+
+uint HEAP_get_num_lvl(HEAP_TREE *tree)
+{
+    if(tree)
+        return tree->end_level->level_num;
+        
+    log_err("tree not initialized");
+    assert(false);
+
+}
+
+void _HEAP_create_next_lvl(HEAP_TREE **tree)
+{
+    DATA *lvl_blk = NULL;
+    HEAP_LVL *lvl = NULL;
+    uint num_el = 0;
+    uint lvl_num = 0;
+
+    if(*tree)
+    {
+        lvl_num = (*tree)->end_level->level_num + 1;
+    }
+    else
+    {
+        *tree=calloc(1,sizeof(HEAP_TREE));
+        if(!(*tree))
+        {
+            log_err("Not enough memory to create a tree");
+            assert(false);
+        }
+        lvl_num=0;
+    }
+
+    num_el=1<<lvl_num;
+    lvl_blk = calloc(num_el, sizeof(DATA));
+
+    if(!lvl_blk)
+    {
+        log_err("Not enough memory to hold data for level %u", lvl_num);
+        assert(false);
+    }
+
+    lvl = calloc(1,sizeof(HEAP_LVL));
+
+    if(!lvl)
+    {
+        log_err("Not enough memory to create a level");
+        assert(false);
+    }
+    
+    // Init level
+    lvl->block=lvl_blk;
+    lvl->level_num=lvl_num;
+    lvl->start_idx= (1<<lvl_num)-1;
+    
+    
+    // Update tree
+    if((*tree)->root!=NULL)
+    {
+        (*tree)->end_level->n_blk=lvl;
+        lvl->p_blk=(*tree)->end_level;
+    }
+    else
+    {
+        (*tree)->root=lvl;
+        lvl->p_blk=NULL;
+    }
+
+    (*tree)->end_level=lvl;
+
+}
+
+DATA* _HEAP_get_free_slot(HEAP_TREE **tree, HEAP_LVL **lvl)
+{
+    HEAP_LVL *actual_lvl=NULL;
+    if(!(*tree))
+    {
+        _HEAP_create_next_lvl(tree);
+       
+    }
+
+    actual_lvl=(*tree)->end_level;
+
+    while(true)
+    {
+
+        if(actual_lvl->free_index < (1<<actual_lvl->level_num))
+        {
+            *lvl=actual_lvl;
+            return &(actual_lvl->block[actual_lvl->free_index]);
+        }
+        
+        _HEAP_create_next_lvl(tree);
+        actual_lvl=(*tree)->end_level;
+
+    }
 
 
-void HEAP_insert_w(HEAP_TREE **tree, char *word)
-{}
+}
+
+void _HEAP_erase_lvl(HEAP_LVL **lvl, HEAP_LVL **p_lvl)
+{
+    *p_lvl = NULL;
+
+    if(*lvl)
+    {
+        uint idx=0, end=0;
+        end=(*lvl)->free_index;
+        (*p_lvl) = (*lvl)->p_blk;
+
+        while(idx<end)
+        {
+            UTILS_deallocate_w(&((*lvl)->block[idx]));
+            idx++;
+        }
+
+        free((*lvl)->block);
+        free(*lvl);
+        *lvl=NULL;
+    }
+   
+}
+
+void HEAP_insert_w(HEAP_TREE **tree, DATA *data)
+{
+    HEAP_LVL *heap_lvl=NULL;
+    DATA *slot=_HEAP_get_free_slot(tree,&heap_lvl);
+
+    UTILS_move_w(data,slot);
+    heap_lvl->free_index++;
+    (*tree)->num_words++;
+}
+
+bool HEAP_get_w_pos(HEAP_TREE **tree, uint idx_tree, HEAP_LVL **heap_lvl, uint *idx_lvl)
+{
+    if(*tree)
+    {
+        uint lvl_num = 0;
+        uint max_elements_lvl=0;
+        HEAP_LVL *lvl=(*tree)->root;
+        *heap_lvl = NULL;
+        *idx_lvl=EMPTY_NODE;
+
+
+        while(true)
+        {   
+            max_elements_lvl+=1<<lvl_num;
+            if (idx_tree>=lvl->start_idx && idx_tree<max_elements_lvl)
+                break;
+
+            lvl= lvl->n_blk;
+            if (!lvl)
+                return false;
+            lvl_num++;
+        }
+
+        if (lvl->block[idx_tree-lvl->start_idx].word == NULL)
+            return false;
+
+        *heap_lvl=lvl;
+        *idx_lvl=idx_tree-lvl->start_idx;
+        return true;
+        
+    }
+
+    return false;
+}
+
+bool HEAP_get_node(HEAP_LVL *heap_lvl, uint idx, DATA **data)
+{
+    *data=NULL;
+
+    if (heap_lvl)
+    {
+        uint end = 1<<(heap_lvl->level_num);
+        if (idx>=0 && idx<end)
+        {
+            *data=&(heap_lvl->block[idx]);
+            return true;
+        }
+
+
+    }
+
+    return false;
+}
+
+bool HEAP_get_parent_pos(HEAP_LVL *child_lvl, uint lvl_child_idx, HEAP_LVL **parent_lvl, uint *lvl_parent_idx)
+{
+    *lvl_parent_idx=EMPTY_NODE;
+    if (child_lvl)
+    {
+        if (lvl_child_idx>=0 && (1<<(child_lvl->level_num)))
+        {
+            *parent_lvl=child_lvl->p_blk;
+            if(*parent_lvl)
+            {
+                *lvl_parent_idx= lvl_child_idx>>1;
+                return true;
+            }
+
+        }
+    }
+    return false;
+}
+
+bool HEAP_get_child_pos(HEAP_LVL *parent_lvl, uint lvl_parent_idx, HEAP_LVL **child_lvl, uint *lvl_l_idx, uint *lvl_r_idx)
+{
+    *lvl_l_idx=EMPTY_NODE;
+    *lvl_r_idx=EMPTY_NODE;
+
+    if(parent_lvl && 
+       lvl_parent_idx!=EMPTY_NODE)
+    {
+        *child_lvl=parent_lvl->n_blk;
+        if(*child_lvl)
+        {
+            *lvl_l_idx=lvl_parent_idx<<1;
+            *lvl_r_idx=(lvl_parent_idx<<1)+1;
+            return true;
+        }
+
+    }
+    return false;
+}
 
 void HEAP_sort(HEAP_TREE *tree, uint num_elements)
 {}
+
+void HEAP_erase(HEAP_TREE **tree)
+{
+    HEAP_LVL *curr_lvl=NULL, *p_level=NULL;
+
+    if(*tree)
+    {
+        curr_lvl=(*tree)->end_level;
+        while(true)
+        {
+           _HEAP_erase_lvl(&curr_lvl, &p_level); 
+           if(p_level)
+           {
+                curr_lvl=p_level;
+                p_level=NULL;
+           }
+           else
+                break;
+        }
+
+    }
+
+    free(*tree);
+}

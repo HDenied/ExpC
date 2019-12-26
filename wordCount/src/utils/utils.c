@@ -65,6 +65,18 @@ void UTILS_move_w(DATA *src, DATA *dst)
     
 }
 
+bool UTILS_is_valid(DATA *d)
+{
+    if(d &&
+       d->word != NULL &&
+       d->n_occ>0)
+    {
+        return true;
+    }
+    return false;
+}
+
+
 bool UTILS_tokenize(FILE *fp, char *word)
 {
       uint ch = 0;

@@ -3,14 +3,19 @@ cd src
 gcc -g -o sorter  ./utils/utils.c ./tst_tree/tst.c ./main.c -I. -Itst_tree -Iutils
 ./sorter
 
-## Build && run tree tests
+## Build && run heap tests
+cd heap_tree
+gcc -g -o unit_test unit_test.c heap.c ../utils/utils.c -I. -I../utils/
+./unit_test
+
+## Build && run tst tests
 cd tst_tree
-gcc -g -o unit_test unit_test.c tst.c ../utils/utils.c -I. -I../ -I../utils/
+gcc -g -o unit_test unit_test.c tst.c ../utils/utils.c -I. -I../utils/
 ./unit_test
 
 ## Build && run utils tests
 cd utils
-gcc -g -o unit_test unit_test.c utils.c -I. -I../
+gcc -g -o unit_test unit_test.c utils.c -I.
 ./unit_test
 
 ## GCC VERSION

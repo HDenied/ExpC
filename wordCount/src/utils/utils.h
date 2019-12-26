@@ -53,7 +53,7 @@ void UTILS_init_w(DATA *data, const char *word, uint n_occ);
 void UTILS_deallocate_w(DATA *data);
 void UTILS_swap_w(DATA *d1, DATA *d2);
 void UTILS_move_w(DATA *src, DATA *dst);
-
+bool UTILS_is_valid(DATA *d);
 
 bool UTILS_tokenize(FILE *fp, char *word);
 
