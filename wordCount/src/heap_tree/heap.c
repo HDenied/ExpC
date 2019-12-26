@@ -42,6 +42,43 @@ uint HEAP_get_num_lvl(HEAP_TREE *tree)
 
 }
 
+void HEAP_print_tree(HEAP_TREE *tree, uint num_elements)
+{
+    if(tree)
+    {
+        uint idx=0;
+        uint inner_idx=0;
+        uint max_lvl_words=1;
+        uint max_words=tree->num_words;
+        HEAP_LVL *curr_lvl=tree->root;
+
+        while(idx<max_words)
+        {
+            for(inner_idx=0; inner_idx<max_lvl_words; inner_idx++)
+            {   
+                if(idx<num_elements && UTILS_is_valid(&curr_lvl->block[inner_idx]))
+                {
+                    printf("%+10u %s\n",  curr_lvl->block[inner_idx].n_occ, curr_lvl->block[inner_idx].word);
+                    idx++;
+                }
+                else
+                    return; 
+            }
+
+            curr_lvl=curr_lvl->n_blk;
+            max_lvl_words=1<<curr_lvl->level_num;
+        }
+
+    }
+    else
+    {
+        log_err("Tree not initialized");
+        assert(false);
+    }
+    
+}
+
+
 void _HEAP_create_next_lvl(HEAP_TREE **tree)
 {
     DATA *lvl_blk = NULL;
@@ -257,9 +294,6 @@ bool HEAP_get_child_pos(HEAP_LVL *parent_lvl, uint lvl_parent_idx, HEAP_LVL **ch
     return false;
 }
 
-void HEAP_sort(HEAP_TREE *tree, uint num_elements)
-{}
-
 void HEAP_erase(HEAP_TREE **tree)
 {
     HEAP_LVL *curr_lvl=NULL, *p_level=NULL;
@@ -283,3 +317,142 @@ void HEAP_erase(HEAP_TREE **tree)
 
     free(*tree);
 }
+
+int HEAP_occ_is_grater(DATA *d1, DATA *d2)
+{
+    if( d1 && d2)
+    {
+        if(d1->n_occ > d2->n_occ)
+        {
+            return 1;
+        }
+        else if (d1->n_occ < d2->n_occ)
+        {
+            return 0;
+        }
+        else
+        {
+            log_err("Element can't be equal");
+            assert(false);
+        }
+        
+    }
+    else
+    {
+        log_err("Data missing");
+        assert(false);
+    }
+    
+}
+
+uint _HEAP_from_rel_to_abs_idx(uint lvl, uint rel_idx)
+{
+    return (1<<lvl) + rel_idx - 1;
+}
+
+void _HEAP_sift(HEAP_TREE *tree, uint p_abs_idx, int (*cmp)(DATA *d1, DATA *d2))
+{
+    uint p_rel_idx=0, l_rel_idx=0, r_rel_idx=0;
+    uint next_abs_idx=0;
+    HEAP_LVL *p_lvl=NULL, *c_lvl=NULL;
+    DATA *p_data=NULL, *l_data=NULL, *r_data=NULL;
+    DATA *tmp_data = NULL;
+    uint tmp_lvl=0;
+    uint tmp_idx=0;   
+
+    //Get parent relative idx and level
+    if(!HEAP_get_w_pos(&tree, p_abs_idx, &p_lvl, &p_rel_idx))
+    {
+        log_err("Parent node not existent");
+        assert(false);
+    }
+    else if(!HEAP_get_node(p_lvl, p_rel_idx, &p_data))
+    {
+        log_err("Parent node out of bound");
+        assert(false);
+    }
+
+    tmp_lvl= p_lvl->level_num;
+    tmp_idx= p_rel_idx;
+    tmp_data = p_data;
+    next_abs_idx=p_abs_idx;
+
+
+    //Get children relative indexes and levels
+    if(HEAP_get_child_pos(p_lvl, p_rel_idx, &c_lvl, &l_rel_idx, &r_rel_idx))
+    {
+        
+        if(!HEAP_get_node(c_lvl, l_rel_idx, &l_data))
+        {
+            log_err("Left child node out of bound");
+            assert(false);
+        }
+        else if(!HEAP_get_node(c_lvl, r_rel_idx, &r_data))
+        {
+            log_err("Right child node out of bound");
+            assert(false);
+        }
+        else
+        {
+            
+            if(UTILS_is_valid(l_data) && cmp(l_data, tmp_data))
+            {
+               tmp_data=l_data;
+               tmp_lvl=c_lvl->level_num;
+               tmp_idx=l_rel_idx;
+            }
+
+            if(UTILS_is_valid(r_data) && cmp(r_data, tmp_data))
+            {
+               tmp_data=r_data;
+               tmp_lvl=c_lvl->level_num;
+               tmp_idx=r_rel_idx;
+            }
+
+            next_abs_idx = _HEAP_from_rel_to_abs_idx(tmp_lvl, tmp_idx);
+            
+        }
+
+        if (next_abs_idx != p_abs_idx)
+        {
+            UTILS_swap_w(p_data,tmp_data);
+            _HEAP_sift(tree, next_abs_idx, cmp);
+
+        }
+
+    }
+
+
+}
+
+void HEAP_build(HEAP_TREE *tree, int (*cmp)(DATA *d1, DATA *d2))
+{
+    uint total_elements=0;
+
+    if (tree)
+    {
+        total_elements = tree->num_words;
+        if(total_elements>1)
+        {
+            uint start_idx = (total_elements>>1)-1;
+            int idx = start_idx;
+
+            while(idx>=0)
+            {
+                _HEAP_sift(tree, idx, cmp);
+                idx--;
+            }
+
+        }
+    }
+    else
+    {
+        log_err("Tree not existent");
+        assert(false);
+    }
+    
+
+}
+
+void HEAP_sort(HEAP_TREE *tree, uint num_elements)
+{}

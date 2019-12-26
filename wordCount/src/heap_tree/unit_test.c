@@ -18,6 +18,16 @@ void _check_data(HEAP_TREE *tree, DATA *ref_data, uint ref_num)
     assert((ref_num+1) != idx_tree);
 }
 
+void _build_ref_data(DATA *array, char *ref_words[], uint *ref_occ, uint num_elements)
+{
+    uint idx=0;
+
+    for (idx=0; idx<num_elements; idx++)
+    {
+        UTILS_init_w(&(array[idx]), ref_words[idx], ref_occ[idx]);
+    }
+}
+
 void test_btree_insertion_complete()
 {
     char *w_arr[] = {"marco","luca","saverio","gomma","primo","auto","martin"};
@@ -274,6 +284,73 @@ void test_btree_get_child()
     log_info("PASSED - test_btree_get_child");
 }
 
+void test_heapify_one_element()
+{
+    char *arr[] = {"marco"};
+    uint occ[]={4};
+    char **ref_arr=arr;
+    uint *ref_occ=occ;
+    uint ref_num = 1;
+    DATA ref_array[ref_num];
+    DATA tmp_data;
+    uint idx=0;
+    HEAP_TREE *tree=NULL;
+
+    _build_ref_data(ref_array, ref_arr, ref_occ, ref_num);
+
+    for(idx=0;idx<ref_num;idx++)
+    {
+        UTILS_init_w(&tmp_data, arr[idx], occ[idx]);
+        HEAP_insert_w(&tree,&tmp_data);
+        assert(HEAP_get_num_w(tree)==idx+1);
+    }
+
+    HEAP_build(tree, HEAP_occ_is_grater);
+    _check_data(tree, ref_array, ref_num);
+
+    HEAP_erase(&tree);
+    for (idx=0; idx<ref_num; idx++)
+    {
+        UTILS_deallocate_w(&(ref_array[idx]));
+    }
+
+    log_info("PASSED - test_heapify_one_element");
+
+}
+
+void test_heapify_n_elements()
+{
+    char *arr[] = {"uno", "tre", "cinque", "quattro", "sei", "tredici", "dieci", "nove", "otto", "quindici", "diciassette"};
+    uint occ[]= { 1, 3, 5, 4, 6, 13, 10, 9, 8, 15, 17 }; 
+    char *ref_arr[]={"diciassette", "quindici", "tredici", "nove", "sei", "cinque",  "dieci", "quattro", "otto", "tre", "uno"};
+    uint ref_occ[]={17, 15, 13, 9, 6, 5, 10, 4, 8, 3, 1};
+    uint ref_num = 11;
+    DATA ref_array[ref_num];
+    DATA tmp_data;
+    uint idx=0;
+    HEAP_TREE *tree=NULL;
+
+    _build_ref_data(ref_array, ref_arr, ref_occ, ref_num);
+
+    for(idx=0;idx<ref_num;idx++)
+    {
+        UTILS_init_w(&tmp_data, arr[idx], occ[idx]);
+        HEAP_insert_w(&tree,&tmp_data);
+        assert(HEAP_get_num_w(tree)==idx+1);
+    }
+
+    HEAP_build(tree, HEAP_occ_is_grater);
+    _check_data(tree, ref_array, ref_num);
+
+    HEAP_erase(&tree);
+    for (idx=0; idx<ref_num; idx++)
+    {
+        UTILS_deallocate_w(&(ref_array[idx]));
+    }
+
+    log_info("PASSED - test_heapify_n_elements");
+
+}
 
 int main()
 {
@@ -284,5 +361,7 @@ int main()
     test_get_node_out_of_bound();
     test_btree_get_parent();
     test_btree_get_child();
+    test_heapify_one_element();
+    test_heapify_n_elements();
     return 0;
 }
