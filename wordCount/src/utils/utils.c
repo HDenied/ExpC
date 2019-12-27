@@ -9,69 +9,106 @@ uint UTILS_get_word_len(const char *word)
     return len;
 }
 
-
-bool UTILS_tokenize(FILE *fp, char *word, char delimiter, char skip_delimiters[], uint skip_counts)
+void UTILS_init_w(DATA *data, const char *word, uint n_occ)
 {
-    uint ch = 0;
-    uint skip_idx=0;
-    uint word_idx=0;
-    uint idx=0;
-    bool skip = false;    
-    
-    while(!feof(fp))
+    uint w_len = UTILS_get_word_len(word);
+    data->word=calloc(w_len+1,sizeof(char));
+    memcpy(data->word, word, w_len);
+    data->word[w_len]='\0';
+    data->n_occ=n_occ;
+}
+void UTILS_deallocate_w(DATA *data)
+{
+    if (data->word)
     {
-        skip = false;
-        ch = fgetc(fp);
+        free(data->word);
+        data->word=NULL;
+        data->n_occ=0;
+    }
+}
+void UTILS_swap_w(DATA *d1, DATA *d2)
+{
+    char *tmp_word=NULL;
+    uint tmp_occ= 0;
 
-        if(ch==feof(fp))
-        {
-            return false;
-        }        
-        /*check if to break or skip special characters*/
-        if(ch != delimiter)
-        {
-            for(idx=0; idx<skip_counts;idx++)
-            {
-                if(ch == skip_delimiters[idx])
-                {
-                    if(word[0]=='\0')
-                    {
-                         skip_idx++;
-                         skip = true;
-                         break;
-                    }
-                    else
-                    {
-                        word[word_idx]='\0';
-                        return true;
-                    }            
-                }
-            }
-        }
-
-        if (!skip)
-        {
-            if (ch!= delimiter)
-            {
-                word[word_idx]=ch;
-                word_idx++;
-                skip_idx++;            
-            }
-            else if (ch == delimiter && word[0]=='\0')
-            {
-                skip_idx++;
-            }
-            else
-            {
-                word[word_idx]='\0';
-                return true;
-            }
-        }
-    }    
+    if (d1 && d2)
+    {
+        tmp_word=d1->word;
+        tmp_occ=d1->n_occ;
+        d1->word=d2->word;
+        d1->n_occ=d2->n_occ;
+        d2->word=tmp_word;
+        d2->n_occ=tmp_occ;
+    }
+    else
+    {
+        log_err("Can't swap not existent data");
+        assert(false);
+    }
     
+}
+
+void UTILS_move_w(DATA *src, DATA *dst)
+{
+    if(src && dst)
+    {
+        dst->word=src->word;
+        dst->n_occ=src->n_occ;
+        src->word=NULL;
+        src->n_occ=0;
+    }
+    else
+    {
+        log_err("Can't move not existent data");
+        assert(false);
+    }
+    
+}
+
+bool UTILS_is_valid(DATA *d)
+{
+    if(d &&
+       d->word != NULL &&
+       d->n_occ>0)
+    {
+        return true;
+    }
     return false;
 }
 
+
+bool UTILS_tokenize(FILE *fp, char *word)
+{
+      uint ch = 0;
+      uint word_idx=0;
+      uint idx=0;
+      
+      while(!feof(fp))
+      {
+          ch = fgetc(fp);
+
+          if(ch >= 'a' && ch <= 'z')
+          {
+              word[word_idx]=ch;
+              word_idx++;
+          }
+          else if (ch >= 'A' && ch <= 'Z')
+          {
+              ch+=32;
+              word[word_idx]=ch;
+              word_idx++;
+          }
+          else if (word[0]!='\0')
+          {
+              word[word_idx]='\0';
+              return true;
+          }
+
+      }
+
+      return false;
+
+}
 
 void UTILS_insertionSort(WORD_S *w_array, uint a_size)
 {

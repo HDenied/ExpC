@@ -1,65 +1,45 @@
-#include<common.h>
 #include<utils.h>
 #include<tst.h>
-
-#define BREAK_NUM 10204
-
+#include<heap.h>
 
 int main()
 {
 
     FILE *fp;
     TST_TREE *tree=NULL;
-    TST_NODE *node=NULL;
+    HEAP_TREE *h_tree = NULL;
     WORD_S word_s;
-    char skip_delimiters[] = {',', '\n', '.', ';', '\t', '*', '!', '[', ']', '(',')','@','#','"','-'};
     char f_path[]="../mobydick.txt";
     char word[W_LEN]="\0";    
     fp = fopen(f_path, "rb");
-    bool b_not_end=true;
-    uint count=0;
-    WORD_S word_arr[BREAK_NUM];
+    DATA tmp_data;
+    uint longest_w_size=0;
 
-    memset(word_arr, 0, BREAK_NUM*sizeof(WORD_S));
-
-    /* Populating the tree */
-    while(b_not_end)
+    /* Populating TST tree */
+    while(UTILS_tokenize(fp, word))
     {
-        b_not_end=UTILS_tokenize(fp, word,' ', skip_delimiters, sizeof(skip_delimiters)/sizeof(char));
-        TST_path_add(&tree,&node, word);
+        TST_insert_w(&tree,word);
         word[0]='\0';
     }
+
+    longest_w_size=get_size_longest_word(tree);
+    log_dbg("Total different words: %u, total allocations: %u, longest word size: %u", get_total_words(tree), get_alloc_num(tree), longest_w_size);
 
     fclose(fp);
 
 
-    /* Extracting the words */
-    while(true)
-    {
+    /* Extracting the words and hipifying*/
+    while(tree)
+    {        
         memset(&word_s,0,sizeof(WORD_S));
-        TST_path_rmv(&tree,&word_s);
-
-        if((strcmp(word_s.word,"T")))
-        {
-            uint w_len = UTILS_get_word_len(word_s.word);
-            word_arr[count].number=word_s.number;
-            memcpy(word_arr[count].word,word_s.word, w_len);
-            word_arr[count].word[w_len+1]='\0';
-            UTILS_insertionSort(word_arr, count);
-
-        }
-        else
-        {
-            break;
-        }
-        
-        count++;
+        TST_pick_w(&tree,&word_s);
+        UTILS_init_w(&tmp_data, word_s.word, word_s.number);
+        HEAP_insert_w(&h_tree,&tmp_data);
     }
-
-    for(count=0; count<20; count++)
-        printf("Word:%s, num:%d\n",word_arr[count].word, word_arr[count].number);
-
-
+    
+    HEAP_sort(h_tree, HEAP_cmp_occ);
+    HEAP_print_tree(h_tree,20);
+    HEAP_erase(&h_tree);
 
     return 0;
 }
