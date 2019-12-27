@@ -305,7 +305,7 @@ void test_heapify_one_element()
         assert(HEAP_get_num_w(tree)==idx+1);
     }
 
-    HEAP_build(tree, HEAP_occ_is_grater);
+    HEAP_build(tree, HEAP_cmp_occ);
     _check_data(tree, ref_array, ref_num);
 
     HEAP_erase(&tree);
@@ -339,7 +339,7 @@ void test_heapify_n_elements()
         assert(HEAP_get_num_w(tree)==idx+1);
     }
 
-    HEAP_build(tree, HEAP_occ_is_grater);
+    HEAP_build(tree, HEAP_cmp_occ);
     _check_data(tree, ref_array, ref_num);
 
     HEAP_erase(&tree);
@@ -349,6 +349,141 @@ void test_heapify_n_elements()
     }
 
     log_info("PASSED - test_heapify_n_elements");
+
+}
+
+void test_heapify_n_elements_duplicates()
+{
+    char *arr[] = {"uno", "tre", "cinque", "cinque", "uno", "tre"};
+    uint occ[]= { 1, 3, 5, 5, 1, 3 }; 
+    char *ref_arr[]={"cinque", "tre", "cinque", "uno", "uno", "tre"};
+    uint ref_occ[]={5, 3, 5, 1, 1, 3};
+    uint ref_num = 6;
+    DATA ref_array[ref_num];
+    DATA tmp_data;
+    uint idx=0;
+    HEAP_TREE *tree=NULL;
+
+    _build_ref_data(ref_array, ref_arr, ref_occ, ref_num);
+
+    for(idx=0;idx<ref_num;idx++)
+    {
+        UTILS_init_w(&tmp_data, arr[idx], occ[idx]);
+        HEAP_insert_w(&tree,&tmp_data);
+        assert(HEAP_get_num_w(tree)==idx+1);
+    }
+
+    HEAP_build(tree, HEAP_cmp_occ);
+    _check_data(tree, ref_array, ref_num);
+
+    HEAP_erase(&tree);
+    for (idx=0; idx<ref_num; idx++)
+    {
+        UTILS_deallocate_w(&(ref_array[idx]));
+    }
+
+    log_info("PASSED - test_heapify_n_elements_duplicates");
+}
+
+void test_heap_sort_one_element()
+{
+    char *arr[] = {"marco"};
+    uint occ[]={4};
+    char **ref_arr=arr;
+    uint *ref_occ=occ;
+    uint ref_num = 1;
+    DATA ref_array[ref_num];
+    DATA tmp_data;
+    uint idx=0;
+    HEAP_TREE *tree=NULL;
+
+    _build_ref_data(ref_array, ref_arr, ref_occ, ref_num);
+
+    for(idx=0;idx<ref_num;idx++)
+    {
+        UTILS_init_w(&tmp_data, arr[idx], occ[idx]);
+        HEAP_insert_w(&tree,&tmp_data);
+        assert(HEAP_get_num_w(tree)==idx+1);
+    }
+
+    HEAP_sort(tree, HEAP_cmp_occ);
+    _check_data(tree, ref_array, ref_num);
+
+    HEAP_erase(&tree);
+    for (idx=0; idx<ref_num; idx++)
+    {
+        UTILS_deallocate_w(&(ref_array[idx]));
+    }
+
+    log_info("PASSED - test_heap_sort_one_element");
+
+}
+
+void test_heap_sort_n_elements()
+{
+    char *arr[] = {"1","7","3","8","12","43","2","5"};
+    uint occ[]= { 1, 7, 3, 8, 12, 43, 2, 5}; 
+    char *ref_arr[]={"1", "2", "3", "5", "7", "8", "12", "43"};
+    uint ref_occ[]={1, 2, 3, 5, 7, 8, 12, 43};
+    uint ref_num = 8;
+    DATA ref_array[ref_num];
+    DATA tmp_data;
+    uint idx=0;
+    HEAP_TREE *tree=NULL;
+
+    _build_ref_data(ref_array, ref_arr, ref_occ, ref_num);
+
+    for(idx=0;idx<ref_num;idx++)
+    {
+        UTILS_init_w(&tmp_data, arr[idx], occ[idx]);
+        HEAP_insert_w(&tree,&tmp_data);
+        assert(HEAP_get_num_w(tree)==idx+1);
+    }
+
+    HEAP_sort(tree, HEAP_cmp_occ);
+    _check_data(tree, ref_array, ref_num);
+
+    HEAP_erase(&tree);
+    for (idx=0; idx<ref_num; idx++)
+    {
+        UTILS_deallocate_w(&(ref_array[idx]));
+    }
+
+    log_info("PASSED - test_heap_sort_n_elements");
+
+}
+
+void test_heap_sort_n_elements_duplicates()
+{
+    char *arr[] = {"1","7","1","8","7","43","7","43"};
+    uint occ[]= { 1, 7, 1, 8, 7, 43, 7, 43}; 
+    char *ref_arr[]={"1", "1", "7", "7", "7", "8", "43", "43"};
+    uint ref_occ[]={1, 1, 7, 7, 7, 8, 43, 43};
+    uint ref_num = 8;
+    DATA ref_array[ref_num];
+    DATA tmp_data;
+    uint idx=0;
+    HEAP_TREE *tree=NULL;
+
+    _build_ref_data(ref_array, ref_arr, ref_occ, ref_num);
+
+    for(idx=0;idx<ref_num;idx++)
+    {
+        UTILS_init_w(&tmp_data, arr[idx], occ[idx]);
+        HEAP_insert_w(&tree,&tmp_data);
+        assert(HEAP_get_num_w(tree)==idx+1);
+    }
+
+    HEAP_sort(tree, HEAP_cmp_occ);
+    _check_data(tree, ref_array, ref_num);
+
+    HEAP_erase(&tree);
+    for (idx=0; idx<ref_num; idx++)
+    {
+        UTILS_deallocate_w(&(ref_array[idx]));
+    }
+
+    log_info("PASSED - test_heap_sort_n_elements_duplicates");
 
 }
 
@@ -363,5 +498,9 @@ int main()
     test_btree_get_child();
     test_heapify_one_element();
     test_heapify_n_elements();
+    test_heapify_n_elements_duplicates();
+    test_heap_sort_one_element();
+    test_heap_sort_n_elements();
+    test_heap_sort_n_elements_duplicates();
     return 0;
 }

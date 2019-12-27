@@ -5,6 +5,7 @@
 
 #define EMPTY_NODE -1
 
+
 struct HEAP_level_s;
 typedef struct HEAP_level_s HEAP_LVL;
 
@@ -26,11 +27,11 @@ bool HEAP_get_child_pos(HEAP_LVL *parent_lvl, uint lvl_parent_idx, HEAP_LVL **ch
 bool HEAP_get_node(HEAP_LVL *heap_lvl, uint idx, DATA **data);
 
 
-int HEAP_occ_is_grater(DATA *d1, DATA *d2);
+CMP_E HEAP_cmp_occ(DATA *d1, DATA *d2);
 
-void HEAP_build(HEAP_TREE *tree, int (*cmp)(DATA *d1, DATA *d2));
+void HEAP_build(HEAP_TREE *tree, CMP_E (*cmp)(DATA *d1, DATA *d2));
 
-void HEAP_sort(HEAP_TREE *tree, uint num_elements);
+void HEAP_sort(HEAP_TREE *tree, CMP_E (*cmp)(DATA *d1, DATA *d2));
 
 void HEAP_erase(HEAP_TREE **tree);
 

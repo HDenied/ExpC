@@ -47,14 +47,15 @@ void HEAP_print_tree(HEAP_TREE *tree, uint num_elements)
     if(tree)
     {
         uint idx=0;
-        uint inner_idx=0;
-        uint max_lvl_words=1;
+        int inner_idx=0;
+        uint max_lvl_words=0;
         uint max_words=tree->num_words;
-        HEAP_LVL *curr_lvl=tree->root;
+        HEAP_LVL *curr_lvl=tree->end_level;
 
-        while(idx<max_words)
+        while(curr_lvl && idx<max_words)
         {
-            for(inner_idx=0; inner_idx<max_lvl_words; inner_idx++)
+            max_lvl_words=curr_lvl->free_index;
+            for(inner_idx=max_lvl_words-1; inner_idx>=0; inner_idx--)
             {   
                 if(idx<num_elements && UTILS_is_valid(&curr_lvl->block[inner_idx]))
                 {
@@ -65,8 +66,8 @@ void HEAP_print_tree(HEAP_TREE *tree, uint num_elements)
                     return; 
             }
 
-            curr_lvl=curr_lvl->n_blk;
-            max_lvl_words=1<<curr_lvl->level_num;
+            curr_lvl=curr_lvl->p_blk;
+           
         }
 
     }
@@ -318,22 +319,21 @@ void HEAP_erase(HEAP_TREE **tree)
     free(*tree);
 }
 
-int HEAP_occ_is_grater(DATA *d1, DATA *d2)
+CMP_E HEAP_cmp_occ(DATA *d1, DATA *d2)
 {
     if( d1 && d2)
     {
         if(d1->n_occ > d2->n_occ)
         {
-            return 1;
+            return GREATER;
         }
         else if (d1->n_occ < d2->n_occ)
         {
-            return 0;
+            return LOWER;
         }
         else
         {
-            log_err("Element can't be equal");
-            assert(false);
+            return EQUAL;
         }
         
     }
@@ -350,7 +350,7 @@ uint _HEAP_from_rel_to_abs_idx(uint lvl, uint rel_idx)
     return (1<<lvl) + rel_idx - 1;
 }
 
-void _HEAP_sift(HEAP_TREE *tree, uint p_abs_idx, int (*cmp)(DATA *d1, DATA *d2))
+void _HEAP_sift(HEAP_TREE *tree, uint p_abs_idx, uint heap_size, CMP_E (*cmp)(DATA *d1, DATA *d2))
 {
     uint p_rel_idx=0, l_rel_idx=0, r_rel_idx=0;
     uint next_abs_idx=0;
@@ -395,14 +395,18 @@ void _HEAP_sift(HEAP_TREE *tree, uint p_abs_idx, int (*cmp)(DATA *d1, DATA *d2))
         else
         {
             
-            if(UTILS_is_valid(l_data) && cmp(l_data, tmp_data))
+            if(UTILS_is_valid(l_data) && 
+               _HEAP_from_rel_to_abs_idx(c_lvl->level_num, l_rel_idx) < heap_size &&
+               cmp(l_data, tmp_data)==GREATER)
             {
                tmp_data=l_data;
                tmp_lvl=c_lvl->level_num;
                tmp_idx=l_rel_idx;
             }
 
-            if(UTILS_is_valid(r_data) && cmp(r_data, tmp_data))
+            if(UTILS_is_valid(r_data) && 
+               _HEAP_from_rel_to_abs_idx(c_lvl->level_num, r_rel_idx) < heap_size &&
+               cmp(r_data, tmp_data)==GREATER)
             {
                tmp_data=r_data;
                tmp_lvl=c_lvl->level_num;
@@ -416,7 +420,7 @@ void _HEAP_sift(HEAP_TREE *tree, uint p_abs_idx, int (*cmp)(DATA *d1, DATA *d2))
         if (next_abs_idx != p_abs_idx)
         {
             UTILS_swap_w(p_data,tmp_data);
-            _HEAP_sift(tree, next_abs_idx, cmp);
+            _HEAP_sift(tree, next_abs_idx, heap_size, cmp);
 
         }
 
@@ -425,7 +429,7 @@ void _HEAP_sift(HEAP_TREE *tree, uint p_abs_idx, int (*cmp)(DATA *d1, DATA *d2))
 
 }
 
-void HEAP_build(HEAP_TREE *tree, int (*cmp)(DATA *d1, DATA *d2))
+void HEAP_build(HEAP_TREE *tree, CMP_E (*cmp)(DATA *d1, DATA *d2))
 {
     uint total_elements=0;
 
@@ -439,7 +443,7 @@ void HEAP_build(HEAP_TREE *tree, int (*cmp)(DATA *d1, DATA *d2))
 
             while(idx>=0)
             {
-                _HEAP_sift(tree, idx, cmp);
+                _HEAP_sift(tree, idx, total_elements, cmp);
                 idx--;
             }
 
@@ -454,5 +458,45 @@ void HEAP_build(HEAP_TREE *tree, int (*cmp)(DATA *d1, DATA *d2))
 
 }
 
-void HEAP_sort(HEAP_TREE *tree, uint num_elements)
-{}
+void HEAP_sort(HEAP_TREE *tree, CMP_E (*cmp)(DATA *d1, DATA *d2))
+{
+    int idx=0;
+    uint root_rel_idx=0, end_rel_idx=0;
+    HEAP_LVL *root_lvl=NULL, *end_lvl=NULL;
+    DATA *root_data=NULL, *end_data=NULL;
+    uint total_elements = tree->num_words;
+
+    HEAP_build(tree, HEAP_cmp_occ);
+
+    for(idx=total_elements-1; idx>=0; idx--)
+    {
+        //Get root and end relative idx and level
+        if(!HEAP_get_w_pos(&tree, 0, &root_lvl, &root_rel_idx))
+        {
+            log_err("Root node not existent");
+            assert(false);
+        }
+        else if(!HEAP_get_w_pos(&tree, idx, &end_lvl, &end_rel_idx))
+        {
+            log_err("End node not existent");
+            assert(false);
+        }
+        else if(!HEAP_get_node(root_lvl, root_rel_idx, &root_data))
+        {
+            log_err("Root node out of bound");
+            assert(false);
+        }
+        else if(!HEAP_get_node(end_lvl, end_rel_idx, &end_data))
+        {
+            log_err("End node out of bound");
+            assert(false);
+        }
+        else
+        {
+            UTILS_swap_w(root_data, end_data);
+            _HEAP_sift(tree, 0, idx, HEAP_cmp_occ);
+        }
+
+    }
+
+}

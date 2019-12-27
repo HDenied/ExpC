@@ -1,22 +1,21 @@
 #include<utils.h>
 #include<tst.h>
+#include<heap.h>
 
 int main()
 {
 
     FILE *fp;
     TST_TREE *tree=NULL;
-    TST_NODE *node=NULL;
+    HEAP_TREE *h_tree = NULL;
     WORD_S word_s;
     char f_path[]="../mobydick.txt";
     char word[W_LEN]="\0";    
     fp = fopen(f_path, "rb");
-    WORD_S *word_arr=NULL;
-    uint w_len=0;
-    uint w_idx=0;
+    DATA tmp_data;
     uint longest_w_size=0;
 
-    /* Populating the tree */
+    /* Populating TST tree */
     while(UTILS_tokenize(fp, word))
     {
         TST_insert_w(&tree,word);
@@ -28,28 +27,19 @@ int main()
 
     fclose(fp);
 
-    word_arr=calloc(get_total_words(tree),sizeof(WORD_S));
 
-
-    /* Extracting the words */
+    /* Extracting the words and hipifying*/
     while(tree)
     {        
         memset(&word_s,0,sizeof(WORD_S));
         TST_pick_w(&tree,&word_s);
-
-        w_len = UTILS_get_word_len(word_s.word);
-        word_arr[w_idx].number=word_s.number;
-        memcpy(word_arr[w_idx].word,word_s.word, w_len);
-        word_arr[w_idx].word[w_len+1]='\0';
-        UTILS_insertionSort(word_arr, w_idx);
-        w_idx++;
-
+        UTILS_init_w(&tmp_data, word_s.word, word_s.number);
+        HEAP_insert_w(&h_tree,&tmp_data);
     }
-
-    for(w_idx=0; w_idx<20; w_idx++)
-        printf("%+10u %s\n",  word_arr[w_idx].number, word_arr[w_idx].word);
-
-
+    
+    HEAP_sort(h_tree, HEAP_cmp_occ);
+    HEAP_print_tree(h_tree,20);
+    HEAP_erase(&h_tree);
 
     return 0;
 }

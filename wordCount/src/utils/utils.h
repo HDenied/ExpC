@@ -31,6 +31,13 @@
     #define log_dbg(M, ...)
 #endif
 
+enum _CMP_E {
+    LOWER=0,
+    EQUAL,
+    GREATER
+};
+
+typedef enum _CMP_E CMP_E;
 
 struct word_s {
     char word[W_LEN];
